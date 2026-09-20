@@ -1,49 +1,133 @@
-/* Robô Olhinhos: animação, voz e conversa sem dependências externas. */
+/* Robô Olhinhos: animação, reconhecimento e síntese de voz sem dependências. */
+'use strict';
+
 const robot = document.querySelector('#robot');
-const eyes = [...document.querySelectorAll('.eye')];
+const eyes = Array.from(document.querySelectorAll('.eye'));
 const statusText = document.querySelector('#statusText');
 const talkButton = document.querySelector('#talkButton');
 const settings = document.querySelector('#settingsDialog');
 const toast = document.querySelector('#toast');
 const stateLabels = { ready: 'Pronto', listening: 'Ouvindo', thinking: 'Pensando', speaking: 'Falando', sleepy: 'Sonolento' };
+const defaults = { robotName: 'Olhinhos', kids: false, endpoint: '' };
 let state = 'ready';
 let recognition = null;
-let blinkTimer;
-let config = JSON.parse(localStorage.getItem('roboOlhinhosConfig') || 'null') || { robotName: 'Olhinhos', kids: false, endpoint: '' };
+let blinkTimer = 0;
+let motionTimer = 0;
+let toastTimer = 0;
+let speechFallbackTimer = 0;
+let config = loadConfig();
 
-function setState(next) { state = next; robot.dataset.state = next; statusText.textContent = stateLabels[next] || next; talkButton.textContent = next === 'listening' ? 'Parar' : 'Conversar'; }
-function moveEyes(x, y) { eyes.forEach((eye, i) => { const independent = i ? -x * .18 : x * .18; eye.querySelector('.iris').style.setProperty('--x', `${x + independent}%`); eye.querySelector('.iris').style.setProperty('--y', `${y + (i ? 2 : -2)}%`); eye.style.setProperty('--tilt', `${(i ? -1 : 1) * x * .035}deg`); }); }
-function blink(double = false) { eyes.forEach(e => { e.classList.add('blink'); setTimeout(() => e.classList.remove('blink'), 145); }); if (double) setTimeout(() => blink(false), 290); }
-function scheduleBlink() { clearTimeout(blinkTimer); blinkTimer = setTimeout(() => { if (state === 'ready' || state === 'sleepy') blink(Math.random() < .16); scheduleBlink(); }, 2300 + Math.random() * 5000); }
-function naturalMotion() { if (state === 'ready') moveEyes(-18 + Math.random() * 36, -12 + Math.random() * 25); setTimeout(naturalMotion, 1800 + Math.random() * 2400); }
-function showToast(message) { toast.textContent = message; toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 3200); }
-
-async function askAI(message) {
-  if (!config.endpoint) return localReply(message);
+function loadConfig() {
   try {
-    const response = await fetch(config.endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message, robotName: config.robotName || 'Olhinhos', kids: Boolean(config.kids) }) });
-    if (!response.ok) throw new Error('endpoint');
-    const data = await response.json();
-    if (!data.reply) throw new Error('reply');
-    return data.reply;
-  } catch { showToast('Endpoint indisponível — usando resposta local.'); return localReply(message); }
+    const saved = JSON.parse(localStorage.getItem('roboOlhinhosConfig') || 'null');
+    return saved && typeof saved === 'object' ? { ...defaults, ...saved } : { ...defaults };
+  } catch (_) { return { ...defaults }; }
 }
-function localReply(message) { const m = message.toLowerCase(); if (m.includes('oi') || m.includes('olá')) return `Olá! Eu sou o ${config.robotName || 'Olhinhos'}. Que bom falar com você!`; if (m.includes('nome')) return `Meu nome é ${config.robotName || 'Olhinhos'}!`; if (m.includes('obrigad')) return 'De nada!'; return config.kids ? 'Que legal! Vamos descobrir isso juntos!' : 'Ainda estou aprendendo, mas gostei de conversar com você!'; }
-function speak(text) { return new Promise(resolve => { if (!('speechSynthesis' in window)) { resolve(); return; } window.speechSynthesis.cancel(); const utterance = new SpeechSynthesisUtterance(text); utterance.lang = 'pt-BR'; utterance.rate = config.kids ? .98 : 1; utterance.pitch = 1.12; utterance.onend = resolve; utterance.onerror = resolve; setState('speaking'); speechSynthesis.speak(utterance); }); }
+function setState(next) {
+  state = next; robot.dataset.state = next; statusText.textContent = stateLabels[next] || next;
+  talkButton.textContent = next === 'listening' ? 'Parar' : 'Conversar';
+}
+function moveEyes(x, y) {
+  eyes.forEach((eye, i) => {
+    const iris = eye.querySelector('.iris');
+    const independent = i ? -x * 0.18 : x * 0.18;
+    iris.style.setProperty('--x', `${x + independent}%`);
+    iris.style.setProperty('--y', `${y + (i ? 2 : -2)}%`);
+    eye.style.setProperty('--tilt', `${(i ? -1 : 1) * x * 0.035}deg`);
+  });
+}
+function blink(doubleBlink) {
+  eyes.forEach(eye => { eye.classList.add('blink'); window.setTimeout(() => eye.classList.remove('blink'), 145); });
+  if (doubleBlink) window.setTimeout(() => blink(false), 290);
+}
+function scheduleBlink() {
+  window.clearTimeout(blinkTimer);
+  blinkTimer = window.setTimeout(() => { if (state === 'ready' || state === 'sleepy') blink(Math.random() < 0.16); scheduleBlink(); }, 2300 + Math.random() * 5000);
+}
+function naturalMotion() {
+  if (state === 'ready') moveEyes(-18 + Math.random() * 36, -12 + Math.random() * 25);
+  motionTimer = window.setTimeout(naturalMotion, 1800 + Math.random() * 2400);
+}
+function showToast(message) {
+  toast.textContent = message; toast.classList.add('show'); window.clearTimeout(toastTimer);
+  toastTimer = window.setTimeout(() => toast.classList.remove('show'), 3500);
+}
+function localReply(message) {
+  const text = message.toLocaleLowerCase('pt-BR'); const name = config.robotName || defaults.robotName;
+  if (text.includes('oi') || text.includes('olá') || text.includes('ola')) return `Olá! Eu sou o ${name}. Que bom falar com você!`;
+  if (text.includes('nome')) return `Meu nome é ${name}!`;
+  if (text.includes('obrigad')) return 'De nada!';
+  return config.kids ? 'Que legal! Vamos descobrir isso juntos!' : 'Ainda estou aprendendo, mas gostei de conversar com você!';
+}
+async function askAI(message) {
+  const endpoint = (config.endpoint || '').trim(); if (!endpoint) return localReply(message);
+  const controller = typeof AbortController === 'function' ? new AbortController() : null;
+  const timeout = window.setTimeout(() => controller && controller.abort(), 20000);
+  try {
+    const response = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, body: JSON.stringify({ message, robotName: config.robotName || defaults.robotName, kids: Boolean(config.kids) }), signal: controller ? controller.signal : undefined });
+    if (!response.ok) throw new Error('endpoint');
+    const data = await response.json(); if (!data || typeof data.reply !== 'string' || !data.reply.trim()) throw new Error('reply');
+    return data.reply.trim();
+  } catch (_) { showToast('Endpoint indisponível — usando resposta local.'); return localReply(message); }
+  finally { window.clearTimeout(timeout); }
+}
+function choosePortugueseVoice() {
+  if (!('speechSynthesis' in window)) return null;
+  const voices = window.speechSynthesis.getVoices();
+  return voices.find(voice => /^pt-BR$/i.test(voice.lang)) || voices.find(voice => /^pt(-|_)/i.test(voice.lang)) || null;
+}
+function speak(text) {
+  return new Promise(resolve => {
+    if (!('speechSynthesis' in window) || typeof window.SpeechSynthesisUtterance !== 'function') { showToast('A fala não é suportada neste navegador.'); resolve(); return; }
+    window.clearTimeout(speechFallbackTimer); window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(String(text));
+    utterance.lang = 'pt-BR'; utterance.rate = config.kids ? 0.96 : 0.98; utterance.pitch = 1.12;
+    const voice = choosePortugueseVoice(); if (voice) utterance.voice = voice;
+    let finished = false;
+    const done = () => { if (finished) return; finished = true; window.clearTimeout(speechFallbackTimer); resolve(); };
+    utterance.onend = done; utterance.onerror = done;
+    setState('speaking');
+    // iOS Safari can pause speech after an asynchronous operation; resume it while speaking.
+    window.speechSynthesis.speak(utterance);
+    window.setTimeout(() => { if (window.speechSynthesis.paused) window.speechSynthesis.resume(); }, 80);
+    speechFallbackTimer = window.setTimeout(done, Math.max(8000, String(text).length * 180));
+  });
+}
 function startConversation() {
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SpeechRecognition) { showToast('Reconhecimento de voz não disponível neste navegador.'); return; }
-  if (state === 'listening') { recognition?.stop(); return; }
+  if (!SpeechRecognition) { showToast('O Safari deste dispositivo não oferece reconhecimento de voz.'); return; }
+  if (state === 'listening') { if (recognition) recognition.stop(); return; }
+  // Warm up speech synthesis from the same user gesture on iOS.
+  if ('speechSynthesis' in window) { window.speechSynthesis.cancel(); window.speechSynthesis.getVoices(); }
   recognition = new SpeechRecognition(); recognition.lang = 'pt-BR'; recognition.interimResults = false; recognition.maxAlternatives = 1; recognition.continuous = false;
   recognition.onstart = () => { setState('listening'); moveEyes(0, -8); };
   recognition.onerror = event => { setState('ready'); showToast(event.error === 'not-allowed' ? 'Permissão do microfone negada.' : 'Não consegui ouvir. Tente novamente.'); };
-  recognition.onresult = async event => { const message = event.results[0][0].transcript; setState('thinking'); moveEyes(20, -25); const reply = await askAI(message); await speak(reply); setState('ready'); };
+  recognition.onresult = async event => {
+    const message = event.results[0] && event.results[0][0] ? event.results[0][0].transcript.trim() : '';
+    if (!message) { setState('ready'); return; }
+    setState('thinking'); moveEyes(20, -25);
+    const reply = await askAI(message); await speak(reply); setState('ready');
+  };
   recognition.onend = () => { if (state === 'listening') setState('ready'); };
-  try { recognition.start(); } catch { showToast('Não foi possível iniciar o microfone.'); }
+  try { recognition.start(); } catch (_) { setState('ready'); showToast('Não foi possível iniciar o microfone.'); }
 }
 talkButton.addEventListener('click', startConversation);
-document.querySelector('#settingsButton').addEventListener('click', () => { document.querySelector('#robotName').value = config.robotName; document.querySelector('#kidsMode').checked = config.kids; document.querySelector('#endpoint').value = config.endpoint; settings.showModal(); });
-document.querySelector('#settingsForm').addEventListener('submit', () => { config = { robotName: document.querySelector('#robotName').value.trim() || 'Olhinhos', kids: document.querySelector('#kidsMode').checked, endpoint: document.querySelector('#endpoint').value.trim() }; localStorage.setItem('roboOlhinhosConfig', JSON.stringify(config)); showToast('Configurações salvas.'); });
-document.querySelector('#fullscreenButton').addEventListener('click', async () => { try { if (!document.fullscreenElement) await document.documentElement.requestFullscreen(); else await document.exitFullscreen(); } catch { showToast('Tela cheia: use o menu Compartilhar do Safari para adicionar à Tela de Início.'); } });
+document.querySelector('#settingsButton').addEventListener('click', () => {
+  document.querySelector('#robotName').value = config.robotName; document.querySelector('#kidsMode').checked = config.kids; document.querySelector('#endpoint').value = config.endpoint;
+  if (typeof settings.showModal === 'function') settings.showModal(); else settings.setAttribute('open', '');
+});
+document.querySelector('#settingsForm').addEventListener('submit', () => {
+  config = { robotName: document.querySelector('#robotName').value.trim() || defaults.robotName, kids: document.querySelector('#kidsMode').checked, endpoint: document.querySelector('#endpoint').value.trim() };
+  localStorage.setItem('roboOlhinhosConfig', JSON.stringify(config)); showToast('Configurações salvas.');
+});
+document.querySelector('#fullscreenButton').addEventListener('click', async () => {
+  try { if (document.fullscreenElement) await document.exitFullscreen(); else if (document.documentElement.requestFullscreen) await document.documentElement.requestFullscreen(); else showToast('Use Compartilhar > Adicionar à Tela de Início no Safari.'); }
+  catch (_) { showToast('Use Compartilhar > Adicionar à Tela de Início no Safari.'); }
+});
+// Do not lock orientation: this lets iPhone rotate naturally between portrait and landscape.
+window.addEventListener('orientationchange', () => window.setTimeout(() => moveEyes(0, 0), 120));
+window.addEventListener('resize', () => { document.documentElement.style.setProperty('--viewport-height', `${window.innerHeight}px`); });
+window.addEventListener('pagehide', () => { window.clearTimeout(blinkTimer); window.clearTimeout(motionTimer); window.clearTimeout(speechFallbackTimer); if ('speechSynthesis' in window) window.speechSynthesis.cancel(); if (recognition) recognition.abort(); });
+if ('speechSynthesis' in window) window.speechSynthesis.onvoiceschanged = () => {};
 moveEyes(0, 0); scheduleBlink(); naturalMotion();
-if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
+if ('serviceWorker' in navigator && window.isSecureContext) window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js', { scope: './' }).catch(() => {}));
