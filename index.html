@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <meta name="theme-color" content="#000000">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Robô Olhinhos">
+  <meta name="mobile-web-app-capable" content="yes">
+  <link rel="apple-touch-icon" href="icon.svg">
+  <link rel="icon" type="image/svg+xml" href="icon.svg">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="styles.css">
+  <title>Robô Olhinhos</title>
+</head>
+<body>
+  <main id="robot" class="robot" data-state="ready" aria-label="Rosto do Robô Olhinhos">
+    <div class="eyes" aria-hidden="true">
+      <div class="eye eye-left"><div class="iris"><div class="pupil"><i></i></div></div><span class="lid"></span></div>
+      <div class="eye eye-right"><div class="iris"><div class="pupil"><i></i></div></div><span class="lid"></span></div>
+    </div>
+    <div class="status" aria-live="polite"><span class="status-dot"></span><span id="statusText">Pronto</span></div>
+    <div class="controls" aria-label="Controles">
+      <button id="talkButton" class="control talk" type="button">Conversar</button>
+      <button id="fullscreenButton" class="control icon-button" type="button" aria-label="Tela cheia" title="Tela cheia">⛶</button>
+      <button id="settingsButton" class="control icon-button" type="button" aria-label="Configurações" title="Configurações">⚙</button>
+    </div>
+  </main>
+
+  <dialog id="settingsDialog" class="settings">
+    <form method="dialog" id="settingsForm">
+      <button class="close" value="cancel" aria-label="Fechar">×</button>
+      <h1>Configurações</h1>
+      <label for="robotName">Nome do robô</label>
+      <input id="robotName" name="robotName" type="text" maxlength="30" autocomplete="off" value="Olhinhos">
+      <label class="switch-row" for="kidsMode"><span>Modo Infantil</span><input id="kidsMode" type="checkbox"><span class="switch"></span></label>
+      <label for="endpoint">Endpoint da IA</label>
+      <input id="endpoint" name="endpoint" type="url" inputmode="url" placeholder="/api/chat" autocomplete="off">
+      <p class="hint">Use um endpoint seguro que aceite POST /api/chat. Nunca coloque chaves secretas neste app.</p>
+      <button class="save" value="default">Salvar</button>
+    </form>
+  </dialog>
+  <div id="toast" class="toast" role="status"></div>
+  <script src="app.js"></script>
+</body>
+</html>

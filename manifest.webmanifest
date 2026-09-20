@@ -1,0 +1,12 @@
+{
+  "name": "Robô Olhinhos",
+  "short_name": "Olhinhos",
+  "description": "Olhos expressivos e animados para o seu robô.",
+  "start_url": ".",
+  "scope": "./",
+  "display": "fullscreen",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "lang": "pt-BR",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+}
