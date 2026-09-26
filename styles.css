@@ -11,8 +11,8 @@ html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background:
 body { touch-action: manipulation; }
 button, input { font: inherit; }
 .robot { position: relative; width: 100%; height: 100%; min-height: 100svh; overflow: hidden; background: #000; padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
-.eyes { position: absolute; inset: 6% 7% 11%; display: flex; align-items: center; justify-content: center; gap: clamp(2rem, 7vw, 5.5rem); }
-.eye { position: relative; width: min(42vw, 46vh); height: min(62vw, 78vh); min-width: 120px; min-height: 180px; border-radius: 48% 48% 45% 45%; background: var(--white); box-shadow: 0 0 2rem rgba(255,255,255,.12); overflow: hidden; transform: rotate(var(--tilt, 0deg)); transition: border-radius .5s ease, transform .7s ease; }
+.eyes { position: absolute; inset: 6% 7% 11%; display: flex; align-items: center; justify-content: center; gap: clamp(3rem, 12vw, 8rem); }
+.eye { position: relative; width: min(38vw, 44vh); height: min(60vw, 76vh); min-width: 120px; min-height: 180px; border-radius: 48% 48% 45% 45%; background: var(--white); box-shadow: 0 0 2rem rgba(255,255,255,.12); overflow: hidden; transform: rotate(var(--tilt, 0deg)); transition: border-radius .5s ease, transform .7s ease; }
 .iris { position: absolute; width: 58%; aspect-ratio: 1; left: calc(50% - 29% + var(--x, 0%)); top: calc(50% - 29% + var(--y, 0%)); border-radius: 50%; background: radial-gradient(circle at 50% 50%, #102a53 0 24%, var(--blue) 27% 60%, var(--cyan) 68%, #0876bb 100%); box-shadow: inset 0 0 0 .2rem #0a75aa, 0 0 1.2rem #30dfff; transition: left .75s cubic-bezier(.2,.8,.2,1), top .75s cubic-bezier(.2,.8,.2,1), transform .45s ease; }
 .pupil { position: absolute; width: 43%; height: 56%; left: 29%; top: 23%; border-radius: 50%; background: #06111e; box-shadow: inset .15rem -.2rem .3rem #000; }
 .pupil i { display: block; width: 25%; aspect-ratio: 1; margin: 15% 0 0 18%; border-radius: 50%; background: white; box-shadow: .45rem .65rem 0 -.15rem rgba(255,255,255,.7); }
@@ -48,8 +48,8 @@ button, input { font: inherit; }
 .toast { position:fixed; left:50%; bottom:5rem; transform:translate(-50%, 1rem); opacity:0; pointer-events:none; padding:.65rem 1rem; border-radius:1rem; background:#202d31; color:#e8f8fc; font-size:.8rem; transition:.25s; }
 .toast.show { opacity:1; transform:translate(-50%,0); }
 @media (orientation: portrait) {
-  .eyes { gap: 1.2rem; }
-  .eye { width: 40vw; height: 54vh; }
+  .eyes { gap: 1.5rem; }
+  .eye { width: 38vw; height: 52vh; }
   .controls { right:calc(.7rem + env(safe-area-inset-right)); bottom:calc(.7rem + env(safe-area-inset-bottom)); }
   .status { bottom:calc(.9rem + env(safe-area-inset-bottom)); }
 }
